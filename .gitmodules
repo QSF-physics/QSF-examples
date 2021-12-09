@@ -1,0 +1,6 @@
+[submodule "QSF"]
+	path = QSF
+	url = git@github.com:QSF-physics/QSF.git
+[submodule "extern/cxxopts"]
+	path = extern/cxxopts
+	url = https://github.com/jarro2783/cxxopts.git
