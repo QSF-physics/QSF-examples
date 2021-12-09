@@ -1,0 +1,10 @@
+{
+    "search.exclude": {
+        "**/.git": true,
+        "extern": true,
+        "build": true,
+        "theory": true,
+        "*.nb": true
+    },
+    "restructuredtext.confPath": "${workspaceFolder}/QSF/docs",
+}

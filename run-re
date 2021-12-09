@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e #Fail on any error
+
+cores=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu || echo "$NUMBER_OF_PROCESSORS")
+
+if [ -n "$1" ]; then
+    proj=$1
+    shift; 
+else
+    proj="template"
+fi
+
+if [ -n "$1" ]; then
+    cores=$1
+    shift;
+fi
+
+echo "About to use $cores cores";
+
+cmake --build build --target ${proj}-re; #-v for verbose
+cd examples/$proj
+
+# module load intelMPI
+# [ $(uname) = "Linux" ] && source /opt/intel/Compiler/19.0/bin/compilervars.sh arch intel64
+
+
+echo "\n:::Remaining params passed to app [$@]"
+[ $(uname) = "Linux" ] && mpirun -np $cores ./qsf-${proj}-re $@
+# [ $(uname) = "Linux" ] && mpirun -np 2 valgrind --leak-check=yes --show-leak-kinds=all --verbose ./${what}
+
+[ $(uname) = "Darwin" ] && mpirun --host localhost:$cores ./qsf-${proj}-re $@

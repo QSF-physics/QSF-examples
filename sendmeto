@@ -1,0 +1,30 @@
+#!/bin/bash -u
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 3)
+BLUE=$(tput setaf 4)
+PINK=$(tput setaf 5)
+BLACK=$(tput setaf 0)
+NC=$(tput sgr0)
+INFC="${YELLOW}"
+set -e
+
+user=`whoami`
+host="$1"
+address="$host"
+# address="$user@$host"
+sourceDir="./"
+targetDir="~"
+CURRENT_DIR=`pwd`
+BASENAME=`basename "$CURRENT_DIR"`
+# set -x # Used to preview all the commands called (good for DEBUG)
+
+BASENAME="${BASENAME}-multi"
+rsync -avhr --dry-run --exclude='.*' --include='/' --exclude='**/Results' --exclude='**/groundstates' --exclude='build' --exclude='deprecated' --exclude='qsf-*' --exclude='*.png' --exclude='*.nb' --exclude='*.dat' --exclude='*.log' $sourceDir $address:$targetDir/$BASENAME
+#Ask
+read -p "${PINK}Above will be ${GREEN}uploaded${PINK} to ${GREEN}$host:$targetDir/$BASENAME${PINK}. Press ENTER to continue.${NC}"
+#Upload
+rsync -avhr --exclude='.*' --include='/' --exclude='**/Results' --exclude='**/groundstates' --exclude='build' --exclude='deprecated' --exclude='qsf-*' --exclude='*.png' --exclude='*.nb' --exclude='*.dat' --exclude='*.log' $sourceDir $address:$targetDir/$BASENAME
+ssh -t $address "cd $targetDir/$BASENAME; bash --login"
+
+exit 0;
