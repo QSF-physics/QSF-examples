@@ -1,7 +1,7 @@
 #include "QSF.h"
 #include "cxxopts.hpp"
 #include <filesystem>
-#define EBERLY
+// #define EBERLY
 cxxopts::Options options("argon-2e", "2e simulations of nitrogen");
 
 cxxopts::ParseResult getOpts(const int argc, char* argv[])
