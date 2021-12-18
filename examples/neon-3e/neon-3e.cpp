@@ -81,7 +81,7 @@ int main(const int argc, char* argv[])
 		exit(0);
 	}
 
-	EckhardtSachaInteraction potential{ {
+	ReducedDimInteraction <ReducedModel::EckhardSacha>potential{ {
 		.Ncharge = 3.0 / sqrt(1.0), .Echarge = -sqrt(1.0),
 		.Nsoft = 0.83, .Esoft = 0.83 } };
 
@@ -131,7 +131,7 @@ int main(const int argc, char* argv[])
 	{
 		QSF::subdirectory("n" + std::to_string(nodes) + "/F0_" + std::to_string(field) + "/phase_" + std::to_string(phase_in_pi_units) + "pi");
 		// We need to pass absolute path 
-		IO::path im_output = IO::root_dir / IO::path("groundstates/" + std::to_string(nodes));
+		IO::path im_output = IO::root_dir / IO::path("groundstates/" + std::to_string(nodes) + "_repX");
 
 		CAP<MultiCartesianGrid<my_dim>> re_capped_grid{ {dx, nodes}, nCAP };
 		using F1 = Field<AXIS::XYZ, ChemPhysEnvelope<ChemPhysPulse>>;

@@ -84,7 +84,7 @@ int main(const int argc, char* argv[])
 		exit(0);
 	}
 
-	EckhardtSachaInteraction potential{ {
+	ReducedDimInteraction <ReducedModel::EckhardSacha>potential{ {
 		.Ncharge = Ncharge, .Echarge = Echarge,
 		.Nsoft = NEsoft, .Esoft = NEsoft } };
 
