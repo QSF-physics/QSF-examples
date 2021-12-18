@@ -1,7 +1,7 @@
 #include "QSF.h"
 #include "cxxopts.hpp"
 #include <filesystem>
-
+#define EBERLY
 cxxopts::Options options("argon-2e", "2e simulations of nitrogen");
 
 cxxopts::ParseResult getOpts(const int argc, char* argv[])
@@ -65,9 +65,6 @@ int main(const int argc, char* argv[])
 	logWarning("testing %d momentum %g", testing, testing_momentum);
 	const ind nodes = result["nodes"].as<ind>();
 	constexpr DIMS my_dim = 2_D;
-	const double Ncharge = 2.0;
-	const double Echarge = -1.0;
-	const double NEsoft = (testing ? 1000000.0 : 2.2);
 	const ind nCAP = 32;//nodes / result["border"].as<ind>();
 	const double omega = 0.0146978556546; //3100um
 	const double FWHM_cycles = result["fwhm"].as<double>();
@@ -86,6 +83,9 @@ int main(const int argc, char* argv[])
 
 	IO::path output_dir{ remote ? std::getenv("SCRATCH") : IO::project_dir };
 	output_dir /= remote ? IO::project_name : IO::results_dir;
+#ifdef EBERLY
+	output_dir /= "eberly";
+#endif
 	if (testing) output_dir /= "test";
 
 	QSF::init(argc, argv, output_dir);
@@ -98,10 +98,14 @@ int main(const int argc, char* argv[])
 		exit(0);
 	}
 
-	EckhardtSachaInteraction potential{ {
-		.Ncharge = Ncharge, .Echarge = Echarge,
-		.Nsoft = NEsoft, .Esoft = NEsoft } };
-
+	InteractionBase config{ .Ncharge = 2.0, .Echarge = -1.0 };
+#ifdef EBERLY
+	config.Nsoft = config.Esoft = (testing ? 1000000.0 : 2.163);
+	ReducedDimInteraction <ReducedModel::Eberly>potential{ config };
+#else
+	config.Nsoft = config.Esoft = (testing ? 1000000.0 : 2.2);
+	ReducedDimInteraction <ReducedModel::EckhardSacha>potential{ config };
+#endif
 	if constexpr MODE_FILTER_OPT(MODE::IM)
 	{
 		QSF::subdirectory("groundstates");
@@ -226,7 +230,7 @@ int main(const int argc, char* argv[])
 					   if ((when == WHEN::AT_START) && (MPI::region == 0)) wf.load(im_output);
 					   else if (when == WHEN::DURING && (step % ncycle_steps == 0))
 					   {
-						   wf.backup(step);
+						   //    wf.backup(step);
 						   //    wf.snapshot("X", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X });
 						   //    wf.snapshot("P", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
 					   }
@@ -236,10 +240,12 @@ int main(const int argc, char* argv[])
 						//    wf.saveIonizedJoined("final_p", { .dim = my_dim, .rep = REP::P });
 						//    wf.orthogonalizeWith(im_output);
 					   #ifdef MULTIGRID
-						   if (MPI::region == 3) wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 1 });
-						   if (MPI::region == 3) wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 2 });
-						   if (MPI::region == 3) wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 4 });
-						   if (MPI::region == 3) wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 8 });
+						//    if (MPI::region == 3) 
+						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 1 });
+						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 1 });
+						//    wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 2 });
+						//    wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 4 });
+						//    wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 8 });
 						   wf.saveIonizedJoined("final", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
 					   #else
 						   auto name = "n" + std::to_string(nodes) + "_dx" + std::to_string(dx) + "_dt" + std::to_string(re_dt)
