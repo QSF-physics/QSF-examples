@@ -176,6 +176,14 @@ int main(const int argc, char* argv[])
 			}
 		};
 
+		double quiver = field / omega / omega;
+		if (quiver > nodes / 4 / dx)
+			logError("Effective grid size (%g) should fit at least a single quiver length (%g)", nodes / 4 / dx, quiver);
+			// p_NS: position of borders between N and S regions (standard: 12.5)
+		p_NS = (ind)(quiver * 2.0 / dx);
+		// p_SD: position of borders between S and D regions (standard: 7)
+		p_SD = (ind)(quiver / dx);
+
 		auto re_outputs = BufferedBinaryOutputs <
 			VALUE<Step, Time>
 			, VALUE<A1>
@@ -183,7 +191,7 @@ int main(const int argc, char* argv[])
 			// , AVG<PotentialEnergy>
 			// , AVG<KineticEnergy>
 			// , AVG<DERIVATIVE<0, PotentialEnergy>>
-			// , ZOA_FLUX_2D
+			, ZOA_FLUX_2D
 			, VALUE<ETA>
 		>{ {.comp_interval = 1, .log_interval = log_interval} };
 
