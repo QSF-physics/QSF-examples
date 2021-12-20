@@ -183,6 +183,7 @@ int main(const int argc, char* argv[])
 		p_NS = (ind)(quiver * 2.0 / dx);
 		// p_SD: position of borders between S and D regions (standard: 7)
 		p_SD = (ind)(quiver / dx);
+		p_CAP = nodes / 4;
 
 		auto re_outputs = BufferedBinaryOutputs <
 			VALUE<Step, Time>
