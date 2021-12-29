@@ -1,3 +1,4 @@
+
 #include "QSF.h"
 #include "cxxopts.hpp"
 #include <filesystem>
@@ -34,6 +35,8 @@ cxxopts::ParseResult getOpts(const int argc, char* argv[])
 	options.add_options("Laser")
 		("f,field", "Field strength [a.u] value (default: 8*10^13 W/cm2)",
 		 cxxopts::value<double>()->default_value("0.0477447629"))
+		("l,lambda", "Wavelength [nm] value (default: 3100nm)",
+		 cxxopts::value<double>()->default_value("3100"))
 		("p,phase", "Carrier Envelope Phase (CEP) [pi] value",
 		 cxxopts::value<double>()->default_value("0.0"))
 		("d,delay", "pulse delay [cycles]",
@@ -66,7 +69,7 @@ int main(const int argc, char* argv[])
 	const ind nodes = result["nodes"].as<ind>();
 	constexpr DIMS my_dim = 2_D;
 	const ind nCAP = 32;//nodes / result["border"].as<ind>();
-	const double omega = 0.0146978556546; //3100um
+	const double omega = lambda_to_omega(result["lambda"].as<double>()); //0.0146978556546; //3100nm
 	const double FWHM_cycles = result["fwhm"].as<double>();
 	const double delay_in_cycles = result["delay"].as<double>();
 	const double postdelay_in_cycles = result["postdelay"].as<double>();
@@ -148,8 +151,11 @@ int main(const int argc, char* argv[])
 	// Real-time part :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 	if constexpr MODE_FILTER_OPT(MODE::RE)
 	{
-		QSF::subdirectory(testing ? "testing" : "fwhm_cycles_" + std::to_string(FWHM_cycles));
-		// We need to pass absolute path 
+		if (testing)
+			QSF::subdirectory("testing");
+		else
+			QSF::subdirectory(IO::path("nm_" + std::to_string((int)result["lambda"].as<double>())) / IO::path("fwhm_cycles_" + std::to_string(FWHM_cycles)) / IO::path("phase_" + std::to_string(phase_in_pi_units)));
+			// We need to pass absolute path 
 		IO::path im_output = IO::root_dir / IO::path("groundstates/" + std::to_string(nodes) + "_" + std::to_string(dx) + "_repX");
 	#define MULTIGRID 1
 	#ifdef MULTIGRID
@@ -177,8 +183,9 @@ int main(const int argc, char* argv[])
 		};
 
 		double quiver = field / omega / omega;
-		if (quiver > nodes / 4 / dx)
-			logError("Effective grid size (%g) should fit at least a single quiver length (%g)", nodes / 4 / dx, quiver);
+		//TODO: UNCOMMENT
+		// if (quiver > nodes / 4 / dx)
+			// logError("Effective grid size (%g) should fit at least a single quiver length (%g)", nodes / 4 / dx, quiver);
 			// p_NS: position of borders between N and S regions (standard: 12.5)
 		p_NS = (ind)(quiver * 2.0 / dx);
 		// p_SD: position of borders between S and D regions (standard: 7)
@@ -242,6 +249,10 @@ int main(const int argc, char* argv[])
 						   //    wf.backup(step);
 						   //    wf.snapshot("X", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X });
 						   //    wf.snapshot("P", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
+						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 1 });
+						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 1 });
+						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 8 });
+						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 8 });
 					   }
 					   else if (when == WHEN::AT_END)
 					   {
@@ -252,6 +263,8 @@ int main(const int argc, char* argv[])
 						//    if (MPI::region == 3) 
 						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 1 });
 						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 1 });
+						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 8 });
+						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 8 });
 						//    wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 2 });
 						//    wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 4 });
 						//    wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 8 });
