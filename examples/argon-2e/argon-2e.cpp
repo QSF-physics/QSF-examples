@@ -1,112 +1,60 @@
 
+// #define TEST_MULTIGRID_MASK
+#define EBERLY false
+#define MULTIGRID 1
+
 #include "QSF.h"
-#include "cxxopts.hpp"
-#include <filesystem>
-// #define EBERLY
-cxxopts::Options options("argon-2e", "2e simulations of nitrogen");
+#include "../getOpts.h"
 
-cxxopts::ParseResult getOpts(const int argc, char* argv[])
-{
-	options.add_options()
-		("h,help", "Print help")
-		("n,nodes", "Number of nodes [positive integer]",
-		 cxxopts::value<ind>()->default_value("1024"))
-		("x,dx", "Set the spacedelta [a.u.]",
-		 cxxopts::value<double>()->default_value("0.2"))
-		("post-core-cut", "Set the range from core to cut after propagation [a.u.]",
-		 cxxopts::value<double>()->default_value("50.0"));
-
-   // ("t,dt", "Set the timedelta [a.u.]",
-   //  cxxopts::value<double>()->default_value("0.2"))
-   // ("s,soft", "Set the coulomb softener (epsilon) [length^2]=[a.u.^2]",
-   //  cxxopts::value<double>()->default_value("0.92"))
-   // ("b,border", "Number of border nodes defined as nCAP=nodes/# [positive integer]",
-   //  cxxopts::value<ind>()->default_value("4"));
-
-	options.add_options("Environment")
-		("r,remote", "Running on remote cluster (AGH Prometeusz) (default: false)")
-		("k,continue", "Continue calculations from the latest backup (default: false)");
-
-	options.add_options("Testing")
-		("g,gaussian", "Start from gaussian wavepacket (default: false)")
-		("m,momentum", "Initial momentum of gaussian wavepacket",
-		 cxxopts::value<double>()->default_value("3.0"));
-
-	options.add_options("Laser")
-		("f,field", "Field strength [a.u] value (default: 8*10^13 W/cm2)",
-		 cxxopts::value<double>()->default_value("0.0477447629"))
-		("l,lambda", "Wavelength [nm] value (default: 3100nm)",
-		 cxxopts::value<double>()->default_value("3100"))
-		("p,phase", "Carrier Envelope Phase (CEP) [pi] value",
-		 cxxopts::value<double>()->default_value("0.0"))
-		("d,delay", "pulse delay [cycles]",
-		 cxxopts::value<double>()->default_value("0.0"))
-		("o,postdelay", "post-pulse delay [cycles]",
-		 cxxopts::value<double>()->default_value("1.0"))
-		("w,fwhm", "FWHM [cycles]",
-		 cxxopts::value<double>()->default_value("6.0"));
-
-	return options.parse(argc, argv);
-}
-
-constexpr auto opt = OPTIMS::NONE;
-constexpr auto order = 1;
+constexpr DIMS my_dim = 2_D;
+constexpr auto splitOrder = 1;
+constexpr ind nCAP = 32;
 using VTV = Split3Base<REP::X, REP::P, REP::X>;
-using SplitType = MultiProductSplit<VTV, order>;
+using SplitType = MultiProductSplit<VTV, splitOrder>;
 // using TVT = Split3Base<REP::P, REP::X, REP::P>;
-// using SplitType = MultiProductSplit<TVT, order>;
-
+// using SplitType = MultiProductSplit<TVT, splitOrder>;
+cxxopts::Options options("argon-2e", "2e simulations of nitrogen");
 int main(const int argc, char* argv[])
 {
 	using namespace QSF;
-
-	auto result = getOpts(argc, argv);
-	const bool remote = result["remote"].as<bool>();
-	const bool continu = result["continue"].as<bool>();
-	const bool testing = result["gaussian"].as<bool>();
-	const double testing_momentum = result["momentum"].as<double>();
-	logWarning("testing %d momentum %g", testing, testing_momentum);
-	const ind nodes = result["nodes"].as<ind>();
-	constexpr DIMS my_dim = 2_D;
-	const ind nCAP = 32;//nodes / result["border"].as<ind>();
-	const double omega = lambda_to_omega(result["lambda"].as<double>()); //0.0146978556546; //3100nm
-	const double FWHM_cycles = result["fwhm"].as<double>();
-	const double delay_in_cycles = result["delay"].as<double>();
-	const double postdelay_in_cycles = result["postdelay"].as<double>();
+	// Get standard options and parse them
+	getOptDefs(options);
+	ropts = options.parse(argc, argv);
+	const ind nodes = opt<ind>("nodes");
+	const double dx = opt<double>("dx");
+	const double re_dt = dx * 0.25;//dx * dx * 0.5;//ropts["dt"].as<double>();
+	const double field = opt<double>("field");
+	const double FWHM_cycles = opt<double>("fwhm");
+	const double ncycles = round(FWHM_cycles * 3.3);
+	const double delay_in_cycles = opt<double>("delay");
+	const double phase_in_pi_units = opt<double>("phase");
+	const double postdelay_in_cycles = opt<double>("postdelay");
+	const double omega = lambda_to_omega(opt<double>("lambda")); //0.0146978556546; //3100nm
+	const double gsrcut = opt<double>("post-core-cut");
 	//The value 3.3 is empirical giving a nice smooth gaussian tail tending towards zero 
-	const double ncycles = (testing ? 0.1 : round(FWHM_cycles * 3.3));
-	const double phase_in_pi_units = result["phase"].as<double>();
-	const double field = testing ? 0.0 : result["field"].as<double>();
-	const double dx = result["dx"].as<double>();
-	const double gsrcut = result["post-core-cut"].as<double>();
-	const double re_dt = dx * 0.25;//dx * dx * 0.5;//result["dt"].as<double>();
-	const int log_interval = testing ? 20 : 1000;
+	const int log_interval = 1000;
 	// backup interval should be a multiple of log_interval
-	const ind ncycle_steps = log_interval * (testing ? 4 : ind(round(twopi / omega / re_dt) / log_interval));
+	const ind ncycle_steps = log_interval * ind(round(10 * twopi / omega / re_dt) / log_interval);
 
-	IO::path output_dir{ remote ? std::getenv("SCRATCH") : IO::project_dir };
-	output_dir /= remote ? IO::project_name : IO::results_dir;
-#ifdef EBERLY
-	output_dir /= "eberly";
-#endif
-	if (testing) output_dir /= "test";
-
+	// Set the output directory (different on cluster)
+	IO::path output_dir{ opt<bool>("remote") ? std::getenv("SCRATCH") : IO::project_dir };
+	output_dir /= opt<bool>("remote") ? IO::project_name : IO::results_dir;
+	output_dir /= (EBERLY ? "model_eb" : "model_es");
 	QSF::init(argc, argv, output_dir);
 
-	if (result.count("help"))
+	if (ropts.count("help")) //Display help for options
 	{
 		if (!MPI::pID)
-			std::cout << options.help({ "", "Laser", "Testing" }) << std::endl;
+			std::cout << options.help({ "", "Environment", "Laser" }) << std::endl;
 		QSF::finalize();
 		exit(0);
 	}
-
+//MODEL SETUP
 	InteractionBase config{ .Ncharge = 2.0, .Echarge = -1.0 };
+	config.Nsoft = config.Esoft = (EBERLY ? 2.163 : 2.2);
 #ifdef EBERLY
-	config.Nsoft = config.Esoft = (testing ? 1000000.0 : 2.163);
 	ReducedDimInteraction <ReducedModel::Eberly>potential{ config };
 #else
-	config.Nsoft = config.Esoft = (testing ? 1000000.0 : 2.2);
 	ReducedDimInteraction <ReducedModel::EckhardSacha>potential{ config };
 #endif
 	if constexpr MODE_FILTER_OPT(MODE::IM)
@@ -151,13 +99,14 @@ int main(const int argc, char* argv[])
 	// Real-time part :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 	if constexpr MODE_FILTER_OPT(MODE::RE)
 	{
-		if (testing)
-			QSF::subdirectory("testing");
-		else
-			QSF::subdirectory(IO::path("nm_" + std::to_string((int)result["lambda"].as<double>())) / IO::path("fwhm_cycles_" + std::to_string(FWHM_cycles)) / IO::path("phase_" + std::to_string(phase_in_pi_units)));
-			// We need to pass absolute path 
+
+		QSF::subdirectory(
+			IO::path("flux_quiver_ratio_" + std::to_string(opt<double>("flux-quiver-ratio"))) /
+			IO::path("nm_" + std::to_string((int)opt<double>("lambda"))) /
+			IO::path("fwhm_cycles_" + std::to_string(FWHM_cycles)) / IO::path("phase_" + std::to_string(phase_in_pi_units)));
+	   // We need to pass absolute path 
 		IO::path im_output = IO::root_dir / IO::path("groundstates/" + std::to_string(nodes) + "_" + std::to_string(dx) + "_repX");
-	#define MULTIGRID 1
+
 	#ifdef MULTIGRID
 		CAP<MultiCartesianGrid<my_dim>> re_capped_grid{ {dx, nodes}, nodes / 4 };
 	#else
@@ -183,15 +132,15 @@ int main(const int argc, char* argv[])
 		};
 
 		double quiver = field / omega / omega;
-		//TODO: UNCOMMENT
-		// if (quiver > nodes / 4 / dx)
-			// logError("Effective grid size (%g) should fit at least a single quiver length (%g)", nodes / 4 / dx, quiver);
-			// p_NS: position of borders between N and S regions (standard: 12.5)
-		p_NS = (ind)(quiver * 2.0 / dx);
-		// p_SD: position of borders between S and D regions (standard: 7)
-		p_SD = (ind)(quiver / dx);
-		p_CAP = nodes / 4;
 
+		if (quiver > nodes / 4 / dx)
+			logError("Effective grid size (%g) should fit at least a single quiver length (%g)", nodes / 4 / dx, quiver);
+		// p_NS: position of borders between N and S regions (standard: 12.5)
+		p_NS = (ind)(quiver * opt<double>("flux-quiver-ratio") / dx);
+		// p_SD: position of borders between S and D regions (standard: 7)
+		p_SD = (ind)p_NS / 2;
+		p_CAP = nodes / 4;
+		logInfo("quiver [%g] %ld %ld %ld\n", quiver, p_NS, p_SD, p_CAP);
 		auto re_outputs = BufferedBinaryOutputs <
 			VALUE<Step, Time>
 			, VALUE<A1>
@@ -209,82 +158,34 @@ int main(const int argc, char* argv[])
 		p2.run(re_outputs,
 			   [=](const WHEN when, const ind step, const uind pass, auto& wf)
 			   {
-				   if (testing)
+
+				   if ((when == WHEN::AT_START) && (MPI::region == 0)) wf.load(im_output);
+				   else if (when == WHEN::DURING && (step % ncycle_steps == 0))
 				   {
-					   if ((when == WHEN::AT_START) && (MPI::region == 0))
-					   {
-						   wf.addUsingCoordinateFunction(
-							   [=](auto... x) -> cxd
-							   {
-								   double mom = ((x * testing_momentum) + ...);
-								   return gaussian(0.0, 4.0, x...) * cxd { cos(mom), sin(mom) };
-							   });
-					   }
-					   if (when == WHEN::DURING)
-					   {
-						   if (step == 1 || step % ncycle_steps == ncycle_steps - 1)
-						   {
-							   wf.snapshot("_step" + std::to_string(step), DUMP_FORMAT{ .dim = my_dim, .rep = REP::X });
-							   wf.snapshot("_step" + std::to_string(step), DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
-							   wf.backup(step);
-						   }
-
-					   }
-					   if (when == WHEN::AT_END)
-					   {
-						   wf.snapshot("_step" + std::to_string(step), DUMP_FORMAT{ .dim = my_dim, .rep = REP::X });
-						   wf.snapshot("_step" + std::to_string(step), DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
-						   if (MPI::region == 3) wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
-						   wf.save("sep_final", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
-						   wf.saveIonizedJoined("final", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
-
-					   }
-
+					   wf.backup(step);
 				   }
-				   else
+				   else if (when == WHEN::AT_END)
 				   {
-					   if ((when == WHEN::AT_START) && (MPI::region == 0)) wf.load(im_output);
-					   else if (when == WHEN::DURING && (step % ncycle_steps == 0))
-					   {
-						   //    wf.backup(step);
-						   //    wf.snapshot("X", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X });
-						   //    wf.snapshot("P", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
-						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 1 });
-						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 1 });
-						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 8 });
-						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 8 });
-					   }
-					   else if (when == WHEN::AT_END)
-					   {
-						//    wf.save("final");
-						//    wf.saveIonizedJoined("final_p", { .dim = my_dim, .rep = REP::P });
-						//    wf.orthogonalizeWith(im_output);
-					   #ifdef MULTIGRID
-						//    if (MPI::region == 3) 
-						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 1 });
-						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 1 });
-						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 8 });
-						   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 8 });
-						//    wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 2 });
-						//    wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 4 });
-						//    wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 8 });
-						   wf.saveIonizedJoined("final", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
-					   #else
-						   auto name = "n" + std::to_string(nodes) + "_dx" + std::to_string(dx) + "_dt" + std::to_string(re_dt)
-							   + "_p" + std::to_string(postdelay_in_cycles) + "_g" + std::to_string(gsrcut);
+				   #ifdef MULTIGRID
+					//    if (MPI::region == 3) 
+					   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 1 });
+					   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 1 });
+					   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 8 });
+					   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 8 });
+					   wf.saveIonizedJoined("final", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
+				   #else
+					   auto name = "n" + std::to_string(nodes) + "_dx" + std::to_string(dx) + "_dt" + std::to_string(re_dt)
+						   + "_p" + std::to_string(postdelay_in_cycles) + "_g" + std::to_string(gsrcut);
 
-						   wf.croossOut(gsrcut);
-						   wf.save(name, DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
-						   wf.save(name, DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 2 });
-						   wf.save(name, DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 4 });
-						   wf.save(name, DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 8 });
-					   #endif
-					   }
+					   wf.croossOut(gsrcut);
+					   wf.save(name, DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
+					   wf.save(name, DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 2 });
+					   wf.save(name, DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 4 });
+					   wf.save(name, DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 8 });
+				   #endif
 				   }
-
-			   }, continu);
+			   }, opt<bool>("continue"));
 	}
-
 
 	QSF::finalize();
 }

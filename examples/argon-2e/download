@@ -1,0 +1,1 @@
+rsync -crhaPvz --stats --include='*/' --include='repP.psi3' --include='RE.dat' --exclude='*' plgranza@prometheus.cyfronet.pl:/net/scratch/people/plgranza/argon-2e/ ./Results/
