@@ -1,10 +1,14 @@
 
 // #define TEST_MULTIGRID_MASK
-#define EBERLY false
-#define MULTIGRID 1
-
 #include "QSF.h"
 #include "../getOpts.h"
+
+#ifndef MODEL 
+#define MODEL ReducedModel::EckhardSacha
+#endif
+#ifndef GRIDTYPE
+#define GRIDTYPE MultiCartesianGrid<my_dim>
+#endif
 
 constexpr DIMS my_dim = 2_D;
 constexpr auto splitOrder = 1;
@@ -39,7 +43,7 @@ int main(const int argc, char* argv[])
 	// Set the output directory (different on cluster)
 	IO::path output_dir{ opt<bool>("remote") ? std::getenv("SCRATCH") : IO::project_dir };
 	output_dir /= opt<bool>("remote") ? IO::project_name : IO::results_dir;
-	output_dir /= (EBERLY ? "model_eb" : "model_es");
+	output_dir /= (MODEL == ReducedModel::Eberly ? "model_eb" : "model_es");
 	QSF::init(argc, argv, output_dir);
 
 	if (ropts.count("help")) //Display help for options
@@ -50,13 +54,9 @@ int main(const int argc, char* argv[])
 		exit(0);
 	}
 //MODEL SETUP
-	InteractionBase config{ .Ncharge = 2.0, .Echarge = -1.0 };
-	config.Nsoft = config.Esoft = (EBERLY ? 2.163 : 2.2);
-#ifdef EBERLY
-	ReducedDimInteraction <ReducedModel::Eberly>potential{ config };
-#else
-	ReducedDimInteraction <ReducedModel::EckhardSacha>potential{ config };
-#endif
+	InteractionBase config{ .Ncharge = 2.0, .Echarge = e };
+	config.Nsoft = config.Esoft = (MODEL == ReducedModel::Eberly ? 2.163 : 2.2);
+	ReducedDimInteraction <MODEL>potential{ config };
 	if constexpr MODE_FILTER_OPT(MODE::IM)
 	{
 		QSF::subdirectory("groundstates");
@@ -107,11 +107,8 @@ int main(const int argc, char* argv[])
 	   // We need to pass absolute path 
 		IO::path im_output = IO::root_dir / IO::path("groundstates/" + std::to_string(nodes) + "_" + std::to_string(dx) + "_repX");
 
-	#ifdef MULTIGRID
-		CAP<MultiCartesianGrid<my_dim>> re_capped_grid{ {dx, nodes}, nodes / 4 };
-	#else
-		CAP<CartesianGrid<my_dim>> re_capped_grid{ {dx, nodes}, nCAP };
-	#endif
+
+		CAP<GRIDTYPE> re_capped_grid{ {dx, nodes}, nodes / 4 };
 		using A1 = VectorPotential<AXIS::XY, GaussianEnvelope<SinPulse>, ConstantPulse>;
 		DipoleCoupling<VelocityGauge, A1> re_coupling
 		{
@@ -124,7 +121,7 @@ int main(const int argc, char* argv[])
 				.phase_in_pi_units = phase_in_pi_units,
 				.delay_in_cycles = delay_in_cycles}},
 			ConstantPulse { {
-				.field = field,
+				.field = 0,
 				.omega = omega,
 				.ncycles = postdelay_in_cycles,
 				.delay_in_cycles = ncycles}}
@@ -162,27 +159,20 @@ int main(const int argc, char* argv[])
 				   if ((when == WHEN::AT_START) && (MPI::region == 0)) wf.load(im_output);
 				   else if (when == WHEN::DURING && (step % ncycle_steps == 0))
 				   {
-					   wf.backup(step);
+					//    wf.backup(step);
+					   wf.save("snap", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 1 });
 				   }
 				   else if (when == WHEN::AT_END)
 				   {
-				   #ifdef MULTIGRID
-					//    if (MPI::region == 3) 
+					   if constexpr (!std::is_same_v<MultiCartesianGrid<my_dim>, GRIDTYPE>)
+						   wf.croossOut(gsrcut);
+
 					   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 1 });
 					   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 1 });
 					   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 8 });
 					   wf.save("momenta", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 8 });
-					   wf.saveIonizedJoined("final", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
-				   #else
-					   auto name = "n" + std::to_string(nodes) + "_dx" + std::to_string(dx) + "_dt" + std::to_string(re_dt)
-						   + "_p" + std::to_string(postdelay_in_cycles) + "_g" + std::to_string(gsrcut);
-
-					   wf.croossOut(gsrcut);
-					   wf.save(name, DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
-					   wf.save(name, DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 2 });
-					   wf.save(name, DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 4 });
-					   wf.save(name, DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 8 });
-				   #endif
+					   if constexpr (std::is_same_v<MultiCartesianGrid<my_dim>, GRIDTYPE>)
+						   wf.saveIonizedJoined("momenta_joined", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P });
 				   }
 			   }, opt<bool>("continue"));
 	}

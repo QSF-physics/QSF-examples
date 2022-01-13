@@ -18,9 +18,9 @@ BL=0.1
 #         done
 #     done
 # done
-for QV in "${fqr}2.000000" "${fqr}0.500000" "${fqr}1.000000" #"${fqr}2.0" "${fqr}0.100000"
+for QV in "${fqr}0.500000" "${fqr}1.000000" #"${fqr}2.000000" #"${fqr}0.500000" "${fqr}1.000000" #"${fqr}2.0" "${fqr}0.100000"
 do 
-    for LB in nm_775 nm_1550 # nm_1800 nm_2500 nm_3100
+    for LB in nm_775 nm_1550 #nm_3100  # nm_1800 nm_2500 nm_3100
     do
         for MT in "True" "False"
         do

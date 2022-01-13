@@ -1,1 +1,1 @@
-rsync -crhaPvz --stats --include='*/' --include='repP.psi3' --include='RE.dat' --exclude='*' plgranza@prometheus.cyfronet.pl:/net/scratch/people/plgranza/argon-2e/ ./Results/
+rsync -rhaPvcz --stats --exclude='*/flux_quiver_ratio_2*' --exclude='*/flux_quiver_ratio_0.1*' --exclude='*/nm_3100' --include='*/' --include='repP.psi3' --include='RE.dat'   --exclude='*' plgranza@prometheus.cyfronet.pl:/net/scratch/people/plgranza/argon-2e/ ./Results/

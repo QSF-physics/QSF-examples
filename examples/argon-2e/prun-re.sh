@@ -20,4 +20,4 @@ cd $SLURM_SUBMIT_DIR
 prj=`basename "$PWD"`
 PARAMS=$(sed -n "${SLURM_ARRAY_TASK_ID}p" < ${SLURM_JOB_NUM_NODES}.param)
 echo "Running task ${prj} with params: ${PARAMS}"
-mpiexec ./qsf-${prj}-re ${PARAMS} -r
+mpiexec ./qsf-${prj}${PARAMS} -r
