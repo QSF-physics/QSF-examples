@@ -17,7 +17,7 @@ using VTV = Split3Base<REP::X, REP::P, REP::X>;
 using SplitType = MultiProductSplit<VTV, splitOrder>;
 // using TVT = Split3Base<REP::P, REP::X, REP::P>;
 // using SplitType = MultiProductSplit<TVT, splitOrder>;
-cxxopts::Options options("argon-2e", "2e simulations of nitrogen");
+cxxopts::Options options("helium-2e", "2e simulations of nitrogen");
 int main(const int argc, char* argv[])
 {
 	using namespace QSF;
@@ -38,7 +38,7 @@ int main(const int argc, char* argv[])
 	//The value 3.3 is empirical giving a nice smooth gaussian tail tending towards zero 
 	const int log_interval = 1000;
 	// backup interval should be a multiple of log_interval
-	const ind ncycle_steps = log_interval * ind(round(2 * twopi / omega / re_dt) / log_interval);
+	const ind ncycle_steps = log_interval * ind(round(10 * twopi / omega / re_dt) / log_interval);
 
 	// Set the output directory (different on cluster)
 	IO::path output_dir{ opt<bool>("remote") ? std::getenv("SCRATCH") : IO::project_dir };
@@ -55,7 +55,7 @@ int main(const int argc, char* argv[])
 	}
 //MODEL SETUP
 	InteractionBase config{ .Ncharge = 2.0, .Echarge = e };
-	config.Nsoft = config.Esoft = (MODEL == ReducedModel::Eberly ? 2.163 : 2.2);
+	config.Nsoft = config.Esoft = (MODEL == ReducedModel::Eberly ? 0.58990 : 0.6);
 	ReducedDimInteraction <MODEL>potential{ config };
 	if constexpr MODE_FILTER_OPT(MODE::IM)
 	{
@@ -141,11 +141,11 @@ int main(const int argc, char* argv[])
 		auto re_outputs = BufferedBinaryOutputs <
 			VALUE<Step, Time>
 			, VALUE<A1>
-			// , AVG<Identity>
+			, AVG<Identity>
 			// , AVG<PotentialEnergy>
 			// , AVG<KineticEnergy>
 			// , AVG<DERIVATIVE<0, PotentialEnergy>>
-			// , ZOA_FLUX_2D
+			, ZOA_FLUX_2D
 			, VALUE<ETA>
 		>{ {.comp_interval = 1, .log_interval = log_interval} };
 
@@ -160,8 +160,7 @@ int main(const int argc, char* argv[])
 				   else if (when == WHEN::DURING && (step % ncycle_steps == 0))
 				   {
 					//    wf.backup(step);
-					//    wf.snapshot("", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 1 });
-					   wf.snapshot("", DUMP_FORMAT{ .dim = my_dim, .rep = REP::P, .downscale = 1 });
+					   wf.save("snap", DUMP_FORMAT{ .dim = my_dim, .rep = REP::X, .downscale = 1 });
 				   }
 				   else if (when == WHEN::AT_END)
 				   {

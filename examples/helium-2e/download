@@ -1,0 +1,3 @@
+# --exclude='*/nm_3100' 
+# --include='RE.dat'
+rsync -rhaPvcz --stats --exclude='*/flux_quiver_ratio_2*' --exclude='*/flux_quiver_ratio_0.1*' --exclude='*/flux_quiver_ratio_0.5*' --include='*/' --include='momenta_repP.psi3'  --exclude='*' plgranza@prometheus.cyfronet.pl:/net/scratch/people/plgranza/argon-2e/ ./Results/
