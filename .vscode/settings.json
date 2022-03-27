@@ -7,4 +7,6 @@
         "*.nb": true
     },
     "restructuredtext.confPath": "${workspaceFolder}/QSF/docs",
+    "esbonio.server.enabled": true,
+    "esbonio.sphinx.confDir": "/Users/ranza/Projects/Quantum/QSF-examples/QSF/docs",
 }

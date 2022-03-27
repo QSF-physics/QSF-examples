@@ -5,7 +5,7 @@ fqr="flux_quiver_ratio_"
 p="phase_"
 DIR=./../../../QSF/mathematica/QSF/
 FM=;
-BL="BlurRadius 0.05"
+BL="GaussianBlurRadius 0.05"
 MO="MergeOrthants"
 MR="WFMaskEdgeAtRatio 0.7"
 QALL="PlotRange->{{-4,4},{-4,4},Full}"
@@ -15,11 +15,15 @@ Q1D="PlotRange->{{0,4*Sqrt[2]},Full}"
 OPT_GROUP="OptionGroups <|full-><|${Q1D},$MO->None|>,corr-><|${Q1D},$MO->Correlated|>,all-><|${Q1D},$MO->All|>|>"
 for QV in "${fqr}2.000000" # "${fqr}1.000000" #"${fqr}0.500000"
 do 
-    for MD in "eb" "es"
-    do
-        CMN="${BL} ${FM} ${MR}"
-        ${DIR}/WF.wl "model_${MD}/${QV}/nm_*/${fc}**/${p}0.5***/momenta_repP.psi3" $CMN ${OPT_GROUP}
-    done
+    
+    CMN="${BL} ${FM} ${MR}"
+    ${DIR}/WF.wl "model_*/${QV}/nm_3100/${fc}**/${p}0.5***/momenta_repP.psi3" $CMN ${OPT_GROUP}
+    
+    # for MD in "eb" "es"
+    # do
+    #     CMN="${BL} ${FM} ${MR}"
+    #     ${DIR}/WF.wl "model_${MD}/${QV}/nm_*/${fc}**/${p}0.5***/momenta_repP.psi3" $CMN ${OPT_GROUP}
+    # done
 done
 exit 0;
 # OPT_GROUP="OptionGroups <|full-><|${Q1D},$MO->None,DiagSum->True|>,corr-><|${Q1D},$MO->Correlated,DiagSum->True|>,all-><|${Q1D},$MO->All,DiagSum->True|>|>"
