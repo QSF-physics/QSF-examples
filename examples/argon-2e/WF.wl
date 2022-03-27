@@ -35,7 +35,7 @@ processed=StructProcess[fileStruct,
         (* FrameTicks->{{True, True},{None, True}}, *)
         ,1->WFExport@*WFPlot *)
     }
-    (* ,1->MergeOrthants *)
+    ,1->MergeOrthants
     ,{
         (* {
             "wf2d/orthants_merged"
@@ -50,10 +50,18 @@ processed=StructProcess[fileStruct,
         } *)
         {
             "wf1d/orthants_merged_and_blured_transverse_diag"
-            ,LegendLabel -> "label"
+            ,LegendLabel->"label"
             ,PlotRange->{{0,rng*Sqrt[2]/2},Full}
-            ,2->WFCombine@*TransverseDiagSum
-            ,"GridTranspose"->True
+            ,Filling->Axis
+            ,FillingStyle -> Directive[Opacity[0.1]]
+            ,GridLines->{Automatic,Range[0, 3, 0.5]}
+            ,GridLinesStyle -> Directive[Gray, Dashed]
+            ,AspectRatio->1/2
+            ,"LegendLabels"->(ToString@Round[ToExpression@Last[StringSplit[First[#],"_"]],.1]<>" cycles" &)
+            ,"GridTranspose"->False
+            ,"GaussianBlurRadius"->0.05
+            ,2->WFCombine@*GaussianBlur@*TransverseDiagSum
+            ,PlotRange->{{0,rng},{0,rng},Full}
             ,0 ->WFGrid
             (* ,DP *)
             ,0->WFExport
