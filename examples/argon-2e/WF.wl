@@ -19,6 +19,10 @@ rng=4; (* Common options *)
 common2Dopts=Sequence[FrameTicks->{{True, True},{True, None}}
 ,FrameLabel->{MaTeX["p_{2}", Magnification -> 1.5],MaTeX["p_{1}", Magnification -> 1.5]}
 ,"GaussianBlurRadius"->0.05];
+
+WavelengthFromPath:=Quantity[ToExpression[StringExtract[#,"nm_"->2,"/"->1]],"nm"]&;
+PeriodFromPath:=PeriodFromWavelength[WavelengthFromPath[#]]&;
+
 common1Dopts=Sequence[LegendLabel->"label"
       ,PlotRange->{{0,rng*Sqrt[2]/2/2},Full},Filling->Axis
       ,FrameLabel->{MaTeX["p^{corr}_{\perp}", Magnification -> 1.5],"[au]"}
@@ -38,34 +42,69 @@ common1Dopts=Sequence[LegendLabel->"label"
 - Functions: [FunctionName] applied to the hierarchy but not modyfing it
 And the most important:
 - Hierarchy Rules [levelIndex->FunctionName]: Represent functions applied to the hierarchy at levelIndex *)
-processed=StructProcess[fileStruct, 
+processed=StructProcess[fileStruct, "CacheDir"->"/tmp/wf_combined/",
 "Operations"->
-{"~/Dropbox/NSDI-paper/"
+{"~/Dropbox/NSDI-paper/wf_combined/"
   ,"FileFormat"->"pdf"
   ,"TrimMarginsPercent"->0.19
-  ,"WFMaskEdgeAtRatio"->0.7
+  ,"WFMaskEdgeAtRatio"->0.70
   (* ,"LeafPath"->"path/filename"  *)
-  ,3 ->TrimMargins@*Average@*RemoveBoundedPart@*WFLoad
-  ,{"wf"    
+  ,4->TrimMargins@*Average@*RemoveBoundedPart@*WFLoad
+  ,{"wf/"    
     ,{"2d/full/",common2Dopts
       ,PlotRange->{{-rng,rng},{-rng,rng},Full}
-      ,1->WFPlot@*GaussianBlur,1->WFExport
-      ,2->WFGrid,2->WFExport
+      ,1->WFPlot@*GaussianBlur
+      ,1->Expo
+      ,3->Expo@*WFPlotGrid
     }
     ,{"1d_transverse_diag/full",common1Dopts
-      ,2->WFGrid@*WFCombine@*GaussianBlur@*TransverseDiagSum
-      ,0->WFExport
+      ,3->WFCombine@*GaussianBlur@*TransverseDiagSum
+      ,1->Expo
+      ,3->Expo@*WFPlotGrid
     }
+    ,{"1d_corr/"
+      ,"Orthants"->"Correlated"
+      ,4->PolarIntegral
+      ,"GaussianBlurRadius"->0.08
+      (* ,common1Dopts *)
+      ,3->Expo@*WFPlot@*GaussianBlur
+      (* ,1->Expo@*WFPlotGrid *)
+    }
+    (* ,{"1d_acorr/"
+      ,4->PolarIntegral
+      ,"GaussianBlurRadius"->0.08
+      (* ,common1Dopts *)
+      (* ,common2Dopts *)
+      ,{
+        (* "RangeScale"->HoldForm[(0.0477447629/(2*Pi/QuantityMagnitude@PeriodFromPath["path"])/2)] *)
+        ,PlotRange->{{0,6},Full}
+        ,FrameLabel->{MaTeX["P_{r}", Magnification -> 1.1],"[au]"}
+        (* ,FillingStyle -> Directive[Opacity[0.1]] *)
+        ,GridLines->{Automatic,Range[0, 3, 0.5]}
+        ,GridLinesStyle -> Directive[Gray, Dashed]
+        ,"LegendPlacement"->Top
+        ,"LegendLabels"->(Quantity[Round[ExtractNumbers[#],1],"nm"] &)
+        ,"GridTranspose"->False
+        ,"PlotGridPadding"->0
+        ,3->Expo@*WFCombine@*GaussianBlur
+        ,1->Expo@*WFPlotGrid
+      }
+      ,"RangeScale"->HoldForm[(0.0477447629/(2*Pi/QuantityMagnitude@PeriodFromPath["path"])/2)]
+      ,3->Expo@*WFPlot@*GaussianBlur
+    } *)
     ,1->MergeOrthants
     ,{"2d/orthants_merged/",common2Dopts
       ,PlotRange->{{0,rng},{0,rng},Full}
-      ,1->WFPlot@*GaussianBlur,1->WFExport
-      ,2->WFGrid,2->WFExport
+      ,1->WFPlot@*GaussianBlur
+      ,1->Expo
+      ,3->Expo@*WFPlotGrid
     }
     ,{"1d_transverse_diag/orthants_merged"
       ,common1Dopts
-      ,2->WFGrid@*WFCombine@*GaussianBlur@*TransverseDiagSum
-      ,0->WFExport
+      ,3->WFCombine@*GaussianBlur@*TransverseDiagSum
+      ,1->Expo
+      ,3->Expo@*WFPlotGrid
     }
+    
   }
 }];

@@ -2,4 +2,11 @@
 # --include='RE.dat'
 # --include='momenta_repP.psi3'
 # --include='256_0.500000_repX.psi'
-rsync -rhaPvcz --stats --exclude='*/flux_quiver_ratio_1*' --exclude='*/flux_quiver_ratio_0.*' --exclude='*/flux_quiver_ratio_2.0' --include='*/'  --include='RE.dat'  --include='momenta_repP.psi2' --include='momenta_repP.psi1'  --exclude='*' plgranza@prometheus.cyfronet.pl:/net/scratch/people/plgranza/argon-2e/ ./Results/
+rsync -rhaPvcz --stats --exclude='*/flux_quiver_ratio_1*' \
+ --exclude='*/flux_quiver_ratio_0.*'\
+ --exclude='*/flux_quiver_ratio_2.0'\
+ --include='*/'  --include='RE.dat'\
+ --include='momenta_repP.psi0'\
+ --exclude='*'\
+ plgranza@prometheus.cyfronet.pl:/net/scratch/people/plgranza/argon-2e/\
+ ./Results/
