@@ -16,8 +16,10 @@ fileStruct=ParsePattern[
 
 PrettyPlots[]; (* Activates LaTeX fonts *)
 rng=4; (* Common options *)
-common2Dopts=Sequence[FrameTicks->{{True, True},{True, None}}
-,FrameLabel->{MaTeX["p_{2}", Magnification -> 1.5],MaTeX["p_{1}", Magnification -> 1.5]}
+common2Dopts=Sequence[
+  (* FrameTicks->{{True, True},{True, None}}, *)
+BaseStyle ->{FontFamily -> "Latin Modern Roman", FontSize -> 16}
+,FrameLabel->{MaTeX["p_{2} \\left( a.u. \\right)", Magnification -> 1.5],MaTeX["p_{1} \\left( a.u. \\right)", Magnification -> 1.5]}
 ,"GaussianBlurRadius"->0.05];
 
 WavelengthFromPath:=Quantity[ToExpression[StringExtract[#,"nm_"->2,"/"->1]],"nm"]&;
@@ -44,7 +46,7 @@ And the most important:
 - Hierarchy Rules [levelIndex->FunctionName]: Represent functions applied to the hierarchy at levelIndex *)
 processed=StructProcess[fileStruct, "CacheDir"->"/tmp/wf_combined/",
 "Operations"->
-{"~/Dropbox/NSDI-paper/wf_combined/"
+{"~/Dropbox/NSDI-paper/"
   ,"FileFormat"->"pdf"
   ,"TrimMarginsPercent"->0.19
   ,"WFMaskEdgeAtRatio"->0.70
@@ -54,12 +56,12 @@ processed=StructProcess[fileStruct, "CacheDir"->"/tmp/wf_combined/",
     ,{"2d/full/",common2Dopts
       ,PlotRange->{{-rng,rng},{-rng,rng},Full}
       ,1->WFPlot@*GaussianBlur
-      ,1->Expo
+      (* ,1->Expo *)
       ,3->Expo@*WFPlotGrid
     }
     ,{"1d_transverse_diag/full",common1Dopts
       ,3->WFCombine@*GaussianBlur@*TransverseDiagSum
-      ,1->Expo
+      (* ,1->Expo *)
       ,3->Expo@*WFPlotGrid
     }
     ,{"1d_corr/"
@@ -96,13 +98,13 @@ processed=StructProcess[fileStruct, "CacheDir"->"/tmp/wf_combined/",
     ,{"2d/orthants_merged/",common2Dopts
       ,PlotRange->{{0,rng},{0,rng},Full}
       ,1->WFPlot@*GaussianBlur
-      ,1->Expo
+      (* ,1->Expo *)
       ,3->Expo@*WFPlotGrid
     }
     ,{"1d_transverse_diag/orthants_merged"
       ,common1Dopts
       ,3->WFCombine@*GaussianBlur@*TransverseDiagSum
-      ,1->Expo
+      (* ,1->Expo *)
       ,3->Expo@*WFPlotGrid
     }
     

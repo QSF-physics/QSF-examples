@@ -52,7 +52,7 @@ processed=StructProcess[fileStruct, "CacheDir"->"/tmp/mmac2/flx/",
     ,2->Expo@*DataPlotGrid
   }
 }]; *)
-
+(* 
 ClearOpts[];
 fileStruct=ParsePattern[
   "Results/model_*/flux_quiver_ratio_0.500000/nm_3100/fwhm_cycles_**/phase_***/RE.dat",
@@ -89,7 +89,7 @@ processed=StructProcess[fileStruct, "CacheDir"->"/tmp/fqr0.5/",
     ,2->DataPlots[{"A","N2*","*2S","*2D_SYM","*2D_ASYM","*2D"}]
     ,2->Expo@*DataPlotGrid
   }
-}];
+}]; *)
 
 ClearOpts[];
 fileStruct=ParsePattern[
