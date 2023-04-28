@@ -111,7 +111,7 @@ processed=StructProcess[fileStruct, "CacheDir"->"/tmp/fqr2.0/",
   (* ,PlotRange->{{0,("fwhm"*1.5)/"cycles"},Full} *)
   (* ,GridLines->Automatic,GridLinesStyle->Directive[Gray,Dashed] *)
   ,FrameLabel->{
-    {None,HoldForm@MaTeX[LatexDataLabels["DataLabel"],Magnification->1.2]},
+    {None,HoldForm@MaTeX[LatexDataLabels["DataLabel"],FontSize->22,"Preamble"->{"\\usepackage[LGRgreek]{mathastext}"}]},
     {HoldForm["rescaled pulse time""TimeUnit"], None}}
   ,LegendLabel->Placed["FWHM [cycles]",Before]
   ,LegendTranslate->(RemoveJunk[#/.Key[c___]->Round[ExtractNumbers[c],0.1]]&)

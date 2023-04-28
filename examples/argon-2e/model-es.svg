@@ -28,14 +28,14 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.79543597"
-     inkscape:cx="275.9493"
-     inkscape:cy="278.46365"
+     inkscape:cx="397.26642"
+     inkscape:cy="309.89295"
      inkscape:window-width="1800"
      inkscape:window-height="1097"
-     inkscape:window-x="0"
-     inkscape:window-y="44"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="g272" />
+     inkscape:window-x="1512"
+     inkscape:window-y="315"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="g270" />
   <defs
      id="defs2080">
     <clipPath
@@ -70,10 +70,6 @@
                inkscape:export-filename="es-model.pdf"
                inkscape:export-xdpi="96"
                inkscape:export-ydpi="96">
-              <path
-                 d="m 293.965,229.279 -135,-78.75 h 135"
-                 style="fill:#ffaaaa;fill-opacity:0.441899;fill-rule:nonzero;stroke:none"
-                 id="path42" />
               <g
                  transform="matrix(1,0,0,-1,0,319.81805)"
                  id="g46">
@@ -154,34 +150,6 @@
                    style="fill:none;stroke:#000000;stroke-width:0.731514;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
                    id="path80" />
               </g>
-              <path
-                 d="M 151.465,293.029 V 154.279 L 12.715,235.974"
-                 style="fill:#ffaaaa;fill-opacity:0.441899;fill-rule:nonzero;stroke:none"
-                 id="path84" />
-              <path
-                 d="m 151.465,293.029 v -138.75 l 139.41,81.695"
-                 style="fill:#ffaaaa;fill-opacity:0.441899;fill-rule:nonzero;stroke:none"
-                 id="path86" />
-              <path
-                 d="m 151.465,8.779 v 138 l 140.25,-80.941"
-                 style="fill:#ffaaaa;fill-opacity:0.441899;fill-rule:nonzero;stroke:none"
-                 id="path88" />
-              <path
-                 d="m 151.465,8.029 v 138.75 L 12.715,65.088"
-                 style="fill:#ffaaaa;fill-opacity:0.441899;fill-rule:nonzero;stroke:none"
-                 id="path90" />
-              <path
-                 d="m 8.965,229.279 135,-78.75 h -135"
-                 style="fill:#ffaaaa;fill-opacity:0.441899;fill-rule:nonzero;stroke:none"
-                 id="path92" />
-              <path
-                 d="m 8.965,71.779 135,78.75 h -135"
-                 style="fill:#ffaaaa;fill-opacity:0.441899;fill-rule:nonzero;stroke:none"
-                 id="path94" />
-              <path
-                 d="m 293.965,71.779 -135,78.75 h 135"
-                 style="fill:#ffaaaa;fill-opacity:0.441899;fill-rule:nonzero;stroke:none"
-                 id="path96" />
               <g
                  transform="matrix(1,0,0,-1,0,319.81805)"
                  id="g100">

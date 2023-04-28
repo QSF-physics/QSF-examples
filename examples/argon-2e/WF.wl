@@ -18,8 +18,13 @@ PrettyPlots[]; (* Activates LaTeX fonts *)
 rng=4; (* Common options *)
 common2Dopts=Sequence[
   (* FrameTicks->{{True, True},{True, None}}, *)
-BaseStyle ->{FontFamily -> "Latin Modern Roman", FontSize -> 16}
-,FrameLabel->{MaTeX["p_{2} \\left( a.u. \\right)", Magnification -> 1.5],MaTeX["p_{1} \\left( a.u. \\right)", Magnification -> 1.5]}
+BaseStyle ->{FontFamily -> "Latin Modern Roman", FontSize -> 24}
+,FrameLabel->{
+  (* Style["\!\(\*SubscriptBox[\(p\), \(2\)]\) (a.u.)", FontSize->24],
+  Style["\!\(\*SubscriptBox[\(p\), \(1\)]\) (a.u.)", FontSize->24] *)
+  MaTeX["p_{2} \\left( a.u. \\right)", FontSize -> 24, "Preamble"->{"\\usepackage[LGRgreek]{mathastext}"}],
+  MaTeX["p_{1} \\left( a.u. \\right)", FontSize -> 24, "Preamble"->{"\\usepackage[LGRgreek]{mathastext}"}]
+  }
 ,"GaussianBlurRadius"->0.05];
 
 WavelengthFromPath:=Quantity[ToExpression[StringExtract[#,"nm_"->2,"/"->1]],"nm"]&;
@@ -27,7 +32,7 @@ PeriodFromPath:=PeriodFromWavelength[WavelengthFromPath[#]]&;
 
 common1Dopts=Sequence[LegendLabel->"label"
       ,PlotRange->{{0,rng*Sqrt[2]/2/2},Full},Filling->Axis
-      ,FrameLabel->{MaTeX["p^{corr}_{\perp}", Magnification -> 1.5],"[au]"}
+      ,FrameLabel->{MaTeX["p^{corr}_{\\perp}", FontSize -> 18],"[au]"}
       ,FillingStyle -> Directive[Opacity[0.1]]
       ,GridLines->{Automatic,Range[0, 3, 0.5]}
       ,GridLinesStyle -> Directive[Gray, Dashed]
@@ -59,7 +64,13 @@ processed=StructProcess[fileStruct, "CacheDir"->"/tmp/wf_combined/",
       (* ,1->Expo *)
       ,3->Expo@*WFPlotGrid
     }
-    ,{"1d_transverse_diag/full",common1Dopts
+    ,{"2d/part/",common2Dopts
+      ,PlotRange->{{0,rng},{0,rng},Full}
+      ,1->WFPlot@*GaussianBlur
+      (* ,1->Expo *)
+      ,3->Expo@*WFPlotGrid
+    }
+    (* ,{"1d_transverse_diag/full",common1Dopts
       ,3->WFCombine@*GaussianBlur@*TransverseDiagSum
       (* ,1->Expo *)
       ,3->Expo@*WFPlotGrid
@@ -71,7 +82,7 @@ processed=StructProcess[fileStruct, "CacheDir"->"/tmp/wf_combined/",
       (* ,common1Dopts *)
       ,3->Expo@*WFPlot@*GaussianBlur
       (* ,1->Expo@*WFPlotGrid *)
-    }
+    } *)
     (* ,{"1d_acorr/"
       ,4->PolarIntegral
       ,"GaussianBlurRadius"->0.08
@@ -94,7 +105,7 @@ processed=StructProcess[fileStruct, "CacheDir"->"/tmp/wf_combined/",
       ,"RangeScale"->HoldForm[(0.0477447629/(2*Pi/QuantityMagnitude@PeriodFromPath["path"])/2)]
       ,3->Expo@*WFPlot@*GaussianBlur
     } *)
-    ,1->MergeOrthants
+    (* ,1->MergeOrthants
     ,{"2d/orthants_merged/",common2Dopts
       ,PlotRange->{{0,rng},{0,rng},Full}
       ,1->WFPlot@*GaussianBlur
@@ -106,7 +117,7 @@ processed=StructProcess[fileStruct, "CacheDir"->"/tmp/wf_combined/",
       ,3->WFCombine@*GaussianBlur@*TransverseDiagSum
       (* ,1->Expo *)
       ,3->Expo@*WFPlotGrid
-    }
+    } *)
     
   }
 }];

@@ -1,7 +1,7 @@
 # Examples for QSF library
 
 ## Introduction
-This repository hosts example projects for the QSF header-only C++ library. 
+This repository hosts example projects for the QSF, a header-only C++ physics library. 
 
 QSF is a project aimed at providing *efficient* and *general* numerical tools for the field of Strong Field Laser Physics.
 
@@ -47,7 +47,7 @@ In case of problems look into `FAQ.md`
 
 You can use any of the existing projects gathered in the `examples` folder as the starting point for your own projects.
 
-It is advised to keep the directory name and the main `.cpp` filename identical.
+It is advised to keep the name of the directory and the main `.cpp` filename identical.
 
 There are three ways to provide configurations to a project:
 - command line options (handled by `cxxopts` library, see nitrogen-3e)
