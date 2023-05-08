@@ -1,13 +1,14 @@
 #!/bin/bash
 set -e #Fail on any error
 
+
 cores=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu || echo "$NUMBER_OF_PROCESSORS")
 
 if [ -n "$1" ]; then
     proj=$1
     shift; 
 else
-    proj="template"
+    proj="template-ini"
 fi
 
 if [ -n "$1" ]; then

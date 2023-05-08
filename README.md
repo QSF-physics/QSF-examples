@@ -3,9 +3,11 @@
 ## Introduction
 This repository hosts example projects for the QSF, a header-only C++ physics library. 
 
-QSF is a project aimed at providing *efficient* and *general* numerical tools for the field of Strong Field Laser Physics.
+QSF is a project aimed at providing *efficient* and *general* numerical tools in
+the field of Strong Field Laser Physics.
 
-It's modular design based extensively on C++ templates and modern C++17 features, allows for creating clear and understandable projects keeping the **physics** first.
+It's modular design based extensively on C++ templates and modern C++17/20 features, 
+allows for creating clear and understandable projects keeping the **physics** first.
 
 The examples include three-electron reduced-dimensionality models (`examples/nitrogen-3e`) and some simpler projects.
 
@@ -19,19 +21,27 @@ The examples include three-electron reduced-dimensionality models (`examples/nit
 * fftw3 library
   > note: intel-provided fftw libraries might cause problems at the moment
 
+### MacOS instructions
+```
+  brew install cmake
+  brew install gcc
+  brew install openmpi
+  brew install fftw
+```
+
 ## Usage
 
 Download the repository recursively and navigate to the directory using:
 
 ```bash
-git clone https://github.com/masteranza/QSF-examples.git --recurse-submodules 
+git clone https://github.com/QSF-physics/QSF-examples.git --recurse-submodules 
 cd QSF-examples
 ```
 
 configure the project using one of the provided scripts (depending on the compiler), e.g:
 
 ```bash
-./configure-gcc11
+./configure-gcc13
 ```
 run any of the example projects (e.g. template-ini) using the `run.sh` script:
 
