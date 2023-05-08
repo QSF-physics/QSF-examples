@@ -14,7 +14,7 @@
                 "PROJNAME=template"
             ],
             "macFrameworkPath": [],
-            "compilerPath": "/opt/homebrew/bin/gcc-11",
+            "compilerPath": "/opt/homebrew/bin/gcc-13",
             "cStandard": "gnu17",
             "intelliSenseMode": "macos-gcc-arm64",
             "cppStandard": "c++17",
