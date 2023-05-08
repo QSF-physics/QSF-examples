@@ -6,12 +6,12 @@
                 "/opt/homebrew/include/",
                 "${workspaceFolder}",
                 "${workspaceFolder}/QSF/**",
-                "${workspaceFolder}/template/*"
+                "${workspaceFolder}/examples/**"
             ],
             "defines": [
                 "DEBUG=1",
                 "MODES=3",
-                "PROJNAME=template"
+                "PROJNAME=template-ini"
             ],
             "macFrameworkPath": [],
             "compilerPath": "/opt/homebrew/bin/gcc-13",

@@ -27,7 +27,7 @@ The examples include three-electron reduced-dimensionality models (`examples/nit
   brew install gcc
   brew install openmpi
   brew install fftw
-```
+``` 
 
 ## Usage
 
