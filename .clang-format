@@ -1,17 +1,25 @@
 # options: https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+Language: Cpp
 Standard: c++20
 BasedOnStyle: LLVM
 UseCRLF: false
 UseTab: Always
 TabWidth: 2
 IndentWidth: 2
+ContinuationIndentWidth: 2
 ColumnLimit: 100
 NamespaceIndentation: All
 FixNamespaceComments: true
 AlignTrailingComments: true
+SortIncludes: false
+AccessModifierOffset: 0
+# AccessModifierOffset: -2
+ConstructorInitializerIndentWidth: 2
+PenaltyReturnTypeOnItsOwnLine: 200
 
 IndentCaseLabels: false
-
+AlignAfterOpenBracket: AlwaysBreak
+# AlignAfterOpenBracket: BlockIndent
 PointerAlignment: Left
 SpaceAroundPointerQualifiers: Before
 SpaceBeforeAssignmentOperators: false
@@ -33,7 +41,6 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 SpaceAfterLogicalNot: false
 SpaceAfterTemplateKeyword: false
-# AccessModifierOffset: -2
 
 
 AllowShortIfStatementsOnASingleLine: Always
@@ -43,7 +50,8 @@ AllowShortCaseLabelsOnASingleLine: true
 AllowShortLoopsOnASingleLine : true
 AllowShortFunctionsOnASingleLine: true
 AllowShortEnumsOnASingleLine: false
-AlwaysBreakAfterReturnType: None
+AlwaysBreakAfterReturnType: TopLevel
+# AlwaysBreakAfterReturnType: None
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterControlStatement: Always
@@ -66,6 +74,7 @@ BraceWrapping:
 
 AlignOperands: AlignAfterOperator
 AlignConsecutiveAssignments: AcrossComments
+# AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: None
 AlignConsecutiveMacros: Consecutive
 BinPackArguments: false

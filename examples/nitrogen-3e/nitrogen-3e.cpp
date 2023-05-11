@@ -1,40 +1,41 @@
+#include <filesystem>
+
 #include "QSF.h"
 #include "cxxopts.hpp"
-#include <filesystem>
 
 cxxopts::Options options("nitrogen-3e", "3e simulations of nitrogen");
 
-cxxopts::ParseResult getOpts(const int argc, char* argv[])
+cxxopts::ParseResult
+getOpts(const int argc, char* argv[])
 {
-	options.add_options()("h,help", "Print help")("n,nodes",
-																								"Number of nodes [positive integer]",
-																								cxxopts::value<ind>()->default_value("1024"))(
-			"t,dt", "Set the timedelta [a.u.]", cxxopts::value<double>()->default_value("0.1"))(
-			"s,soft",
-			"Set the coulomb softener (epsilon) [length^2]=[a.u.^2]",
-			cxxopts::value<double>()->default_value("0.92"))(
-			"b,border",
-			"Number of border nodes defined as nCAP=nodes/# [positive integer]",
-			cxxopts::value<ind>()->default_value("4"));
+	options.add_options()("h,help", "Print help")(
+		"n,nodes", "Number of nodes [positive integer]", cxxopts::value<ind>()->default_value("1024"))(
+		"t,dt", "Set the timedelta [a.u.]", cxxopts::value<double>()->default_value("0.1"))(
+		"s,soft",
+		"Set the coulomb softener (epsilon) [length^2]=[a.u.^2]",
+		cxxopts::value<double>()->default_value("0.92"))(
+		"b,border",
+		"Number of border nodes defined as nCAP=nodes/# [positive integer]",
+		cxxopts::value<ind>()->default_value("4"));
 
-	options.add_options("Environment")("r,remote",
-																		 "Running on remote cluster (AGH Prometeusz) (default: false)")(
-			"k,continue", "Continue calculations from the latest backup (default: false)");
+	options.add_options("Environment")(
+		"r,remote", "Running on remote cluster (AGH Prometeusz) (default: false)")(
+		"k,continue", "Continue calculations from the latest backup (default: false)");
 
 	options.add_options("Testing")("g,gaussian", "Start from gaussian wavepacket (default: false)")(
-			"m,momentum",
-			"Initial momentum of gaussian wavepacket",
-			cxxopts::value<double>()->default_value("3.0"));
+		"m,momentum",
+		"Initial momentum of gaussian wavepacket",
+		cxxopts::value<double>()->default_value("3.0"));
 
 	options.add_options("Laser")(
-			"f,field", "Field strength [a.u] value", cxxopts::value<double>()->default_value("0.12"))(
-			"p,phase",
-			"Carrier Envelope Phase (CEP) [pi] value",
-			cxxopts::value<double>()->default_value("0.0"))(
-			"d,delay", "pulse delay [cycles]", cxxopts::value<double>()->default_value("0.0"))(
-			"c,cycles",
-			"Cycles [number]",
-			cxxopts::value<double>()->default_value("3.0")->implicit_value("3.0"));
+		"f,field", "Field strength [a.u] value", cxxopts::value<double>()->default_value("0.12"))(
+		"p,phase",
+		"Carrier Envelope Phase (CEP) [pi] value",
+		cxxopts::value<double>()->default_value("0.0"))(
+		"d,delay", "pulse delay [cycles]", cxxopts::value<double>()->default_value("0.0"))(
+		"c,cycles",
+		"Cycles [number]",
+		cxxopts::value<double>()->default_value("3.0")->implicit_value("3.0"));
 
 	return options.parse(argc, argv);
 }
@@ -44,7 +45,8 @@ constexpr auto order= 1;
 using VTV						= Split3Base<REP::X, REP::P, REP::X>;
 using SplitType			= MultiProductSplit<VTV, order>;
 
-int main(const int argc, char* argv[])
+int
+main(const int argc, char* argv[])
 {
 	using namespace QSF;
 
@@ -84,7 +86,7 @@ int main(const int argc, char* argv[])
 	}
 
 	ReducedDimInteraction<ReducedModel::EckhardSacha> potential{
-			{.Ncharge= Ncharge, .Echarge= Echarge, .Nsoft= NEsoft, .Esoft= NEsoft}};
+		{.Ncharge= Ncharge, .Echarge= Echarge, .Nsoft= NEsoft, .Esoft= NEsoft}};
 
 	if constexpr
 		MODE_FILTER_OPT(MODE::IM)
@@ -92,35 +94,35 @@ int main(const int argc, char* argv[])
 			QSF::subdirectory("groundstates");
 			CAP<CartesianGrid<my_dim>> im_grid{{dx, nodes}, nCAP};
 			auto im_wf		 = Schrodinger::Spin0{im_grid, potential};
-			auto im_outputs= BufferedBinaryOutputs<VALUE<Step, Time>,
-																						 OPERATION<Orthogonalize>,
-																						 OPERATION<AntiSymmetrize<3_D>>,
-																						 OPERATION<Normalize>,
-																						 AVG<Identity>,
-																						 AVG<PotentialEnergy>,
-																						 AVG<KineticEnergy>,
-																						 ENERGY_TOTAL,
-																						 ENERGY_DIFFERENCE>{
-					{.comp_interval= 1, .log_interval= log_interval}};
+			auto im_outputs= BufferedBinaryOutputs<
+				VALUE<Step, Time>,
+				OPERATION<Orthogonalize>,
+				OPERATION<AntiSymmetrize<3_D>>,
+				OPERATION<Normalize>,
+				AVG<Identity>,
+				AVG<PotentialEnergy>,
+				AVG<KineticEnergy>,
+				ENERGY_TOTAL,
+				ENERGY_DIFFERENCE>{{.comp_interval= 1, .log_interval= log_interval}};
 
 			auto p1= SplitPropagator<MODE::IM, SplitType, decltype(im_wf)>{
-					{.dt= 0.3, .max_steps= 1000000, .state_accuracy= 10E-15}, std::move(im_wf)};
+				{.dt= 0.3, .max_steps= 1000000, .state_accuracy= 10E-15}, std::move(im_wf)};
 
 			p1.run(
-					im_outputs,
-					[&](const WHEN when, const ind step, const uind pass, auto& wf)
+				im_outputs,
+				[&](const WHEN when, const ind step, const uind pass, auto& wf)
+				{
+					if(when == WHEN::AT_START)
 					{
-						if(when == WHEN::AT_START)
-						{
-							wf.addUsingCoordinateFunction(
-									[](auto... x) -> cxd {
-										return cxd{gaussian(0.0, 3.0, x...), 0};
-									});
-							logUser("wf loaded manually!");
-						}
-						if(when == WHEN::AT_END) wf.save(std::to_string(nodes));
-					},
-					continu);
+						wf.addUsingCoordinateFunction(
+							[](auto... x) -> cxd {
+								return cxd{gaussian(0.0, 3.0, x...), 0};
+							});
+						logUser("wf loaded manually!");
+					}
+					if(when == WHEN::AT_END) wf.save(std::to_string(nodes));
+				},
+				continu);
 		}
 
 	// ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -128,75 +130,76 @@ int main(const int argc, char* argv[])
 	if constexpr
 		MODE_FILTER_OPT(MODE::RE)
 		{
-			QSF::subdirectory("n" + std::to_string(nodes) + "/F0_" + std::to_string(field) + "/phase_" +
-												std::to_string(phase_in_pi_units) + "pi");
+			QSF::subdirectory(
+				"n" + std::to_string(nodes) + "/F0_" + std::to_string(field) + "/phase_" +
+				std::to_string(phase_in_pi_units) + "pi");
 			// We need to pass absolute path
 			IO::path im_output= IO::root_dir / IO::path("groundstates/" + std::to_string(nodes));
 
 			CAP<MultiCartesianGrid<my_dim>> re_capped_grid{{dx, nodes}, nCAP};
 			using F1= Field<AXIS::XYZ, ChemPhysEnvelope<ChemPhysPulse>>;
-			DipoleCoupling<VelocityGauge, F1> re_coupling{
-					ChemPhysEnvelope<ChemPhysPulse>{{.field						 = sqrt(2. / 3.) * field,
-																					 .omega						 = omega,
-																					 .ncycles					 = ncycles,
-																					 .phase_in_pi_units= phase_in_pi_units,
-																					 .delay_in_cycles	 = delay_in_cycles}}};
+			DipoleCoupling<VelocityGauge, F1> re_coupling{ChemPhysEnvelope<ChemPhysPulse>{
+				{.field						 = sqrt(2. / 3.) * field,
+				 .omega						 = omega,
+				 .ncycles					 = ncycles,
+				 .phase_in_pi_units= phase_in_pi_units,
+				 .delay_in_cycles	 = delay_in_cycles}}};
 
-			auto re_outputs=
-					BufferedBinaryOutputs<VALUE<Step, Time>,
-																VALUE<F1>,
-																AVG<Identity>
-																// , AVG<PotentialEnergy>
-																// , AVG<KineticEnergy>
-																// PROJ<EIGENSTATES, Identity>,
-																// , AVG<DERIVATIVE<0, PotentialEnergy>>
-																// , ZOA_FLUX_3D
-																,
-																VALUE<ETA>>{{.comp_interval= 1, .log_interval= log_interval}};
+			auto re_outputs= BufferedBinaryOutputs<
+				VALUE<Step, Time>,
+				VALUE<F1>,
+				AVG<Identity>
+				// , AVG<PotentialEnergy>
+				// , AVG<KineticEnergy>
+				// PROJ<EIGENSTATES, Identity>,
+				// , AVG<DERIVATIVE<0, PotentialEnergy>>
+				// , ZOA_FLUX_3D
+				,
+				VALUE<ETA>>{{.comp_interval= 1, .log_interval= log_interval}};
 
 			auto re_wf= Schrodinger::Spin0{re_capped_grid, potential, re_coupling};
 			auto p2=
-					SplitPropagator<MODE::RE, SplitType, decltype(re_wf)>{{.dt= re_dt}, std::move(re_wf)};
+				SplitPropagator<MODE::RE, SplitType, decltype(re_wf)>{{.dt= re_dt}, std::move(re_wf)};
 
 			p2.run(
-					re_outputs,
-					[=](const WHEN when, const ind step, const uind pass, auto& wf)
+				re_outputs,
+				[=](const WHEN when, const ind step, const uind pass, auto& wf)
+				{
+					if(!testing)
 					{
-						if(!testing)
+						if((when == WHEN::AT_START) && (MPI::region == 0)) wf.load(im_output);
+						else if(when == WHEN::DURING && (step % halfcycle_steps == 0))
+							wf.backup(step);
+						else if(when == WHEN::AT_END)
 						{
-							if((when == WHEN::AT_START) && (MPI::region == 0)) wf.load(im_output);
-							else if(when == WHEN::DURING && (step % halfcycle_steps == 0))
-								wf.backup(step);
-							else if(when == WHEN::AT_END)
-							{
-								wf.save("final");
-								wf.saveIonizedJoined("final_p", {.dim= my_dim, .rep= REP::P});
-							}
+							wf.save("final");
+							wf.saveIonizedJoined("final_p", {.dim= my_dim, .rep= REP::P});
 						}
-						else
+					}
+					else
+					{
+						if((when == WHEN::AT_START) && (MPI::region == 0))
 						{
-							if((when == WHEN::AT_START) && (MPI::region == 0))
-							{
-								wf.addUsingCoordinateFunction(
-										[=](auto... x) -> cxd
-										{
-											double mom= ((x * testing_momentum) + ...);
-											return gaussian(2.0, 1.0, x...) * cxd{cos(mom), sin(mom)};
-										});
-							}
-							if(when == WHEN::DURING)
-							{
-								if(step == 1 || step % halfcycle_steps == halfcycle_steps - 1)
-									wf.snapshot("_step" + std::to_string(step));
-							}
-							if(when == WHEN::AT_END)
-							{
-								wf.save("final_");
-								wf.saveIonizedJoined("final_p", {.dim= my_dim, .rep= REP::P});
-							}
+							wf.addUsingCoordinateFunction(
+								[=](auto... x) -> cxd
+								{
+									double mom= ((x * testing_momentum) + ...);
+									return gaussian(2.0, 1.0, x...) * cxd{cos(mom), sin(mom)};
+								});
 						}
-					},
-					continu);
+						if(when == WHEN::DURING)
+						{
+							if(step == 1 || step % halfcycle_steps == halfcycle_steps - 1)
+								wf.snapshot("_step" + std::to_string(step));
+						}
+						if(when == WHEN::AT_END)
+						{
+							wf.save("final_");
+							wf.saveIonizedJoined("final_p", {.dim= my_dim, .rep= REP::P});
+						}
+					}
+				},
+				continu);
 		}
 
 	QSF::finalize();
