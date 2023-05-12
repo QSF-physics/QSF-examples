@@ -18,7 +18,8 @@
 constexpr DIMS my_dim		 = 2_D;
 /// @brief Order of operator splitting
 constexpr auto splitOrder= 1;
-/// @brief Number of grid points to be used by Complex Absrobing Potential margin
+/// @brief Number of grid points to be used by Complex Absrobing Potential margin during imaginary
+/// propagation
 constexpr ind nCAP			 = 32;
 /// @brief Shorthand for describing type of base operator splitting
 using VTV								 = Split3Base<REP::X, REP::P, REP::X>;
@@ -97,7 +98,7 @@ int main(const int argc, char* argv[])
 
 			CAP<CartesianGrid<my_dim>> im_grid{{dx, nodes}, nCAP};
 			auto im_wf		 = Schrodinger::Spin0{im_grid, potential};
-			///  BufferedBinarOutputs<...> is an alias of BufferedOutputs<true,...>
+			///  BufferedBinaryOutputs<...> is an alias of BufferedOutputs<true,...>
 			auto im_outputs= BufferedBinaryOutputs<
 				VALUE<Step, Time>,
 				OPERATION<Normalize>,
@@ -135,7 +136,7 @@ int main(const int argc, char* argv[])
 				IO::path("nm_" + std::to_string((int)opt<double>("lambda"))) /
 				IO::path("fwhm_cycles_" + std::to_string(FWHM_cycles)) /
 				IO::path("phase_" + std::to_string(phase_in_pi_units)));
-			// We need to pass absolute path
+			// We need to pass absolute path to reach the input
 			IO::path im_output=
 				IO::root_dir /
 				IO::path("groundstates/" + std::to_string(nodes) + "_" + std::to_string(dx) + "_repX");

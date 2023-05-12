@@ -24,7 +24,7 @@ cd examples/$proj
 # [ $(uname) = "Linux" ] && source /opt/intel/Compiler/19.0/bin/compilervars.sh arch intel64
 
 
-echo "\n:::Remaining params passed to app [$@]"
+set -x
 [ $(uname) = "Linux" ] && mpirun -np $cores ./qsf-${proj}-im $@
 # [ $(uname) = "Linux" ] && mpirun -np 2 valgrind --leak-check=yes --show-leak-kinds=all --verbose ./${what}
 

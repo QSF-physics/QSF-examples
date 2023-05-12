@@ -88,3 +88,4 @@ Examples of each can be found in the `examples directory`.
 2. Improve type deduction in template function/classes
 3. Load configs using .env variables rather than ini files
 4. Swap the custom logging solution for spdlog
+5. Creating Dalitz plots
