@@ -7,19 +7,21 @@ using SplitType			= MultiProductSplit<VTV, order>;
 
 int main(int argc, char* argv[])
 {
-	QSF::init(argc, argv, IOUtils::project_dir / IOUtils::results_dir);
+	using namespace QSF;
+	QSF::init(argc, argv, IO::project_dir / IO::results_dir);
 	using im_grid_t		= CartesianGrid<2_D>;		// 2_D == DIMS::D2
 	using im_wf_t			= Schrodinger::Spin0<im_grid_t, CoulombInteraction>;
-	using im_outputs_t= BufferedBinaryOutputs<VALUE<Step, Time>
-																						// , OPERATION<Orthogonalize>
-																						// , OPERATION<Symmetrize>
-																						,
-																						OPERATION<Normalize>,
-																						AVG<Identity>,
-																						AVG<PotentialEnergy>,
-																						AVG<KineticEnergy>,
-																						SUM<AVG<PotentialEnergy>, AVG<KineticEnergy>>,
-																						CHANGE<SUM<AVG<PotentialEnergy>, AVG<KineticEnergy>>>>;
+	using im_outputs_t= BufferedBinaryOutputs<
+		VALUE<Step, Time>
+		// , OPERATION<Orthogonalize>
+		// , OPERATION<Symmetrize>
+		,
+		OPERATION<Normalize>,
+		AVG<Identity>,
+		AVG<PotentialEnergy>,
+		AVG<KineticEnergy>,
+		SUM<AVG<PotentialEnergy>, AVG<KineticEnergy>>,
+		CHANGE<SUM<AVG<PotentialEnergy>, AVG<KineticEnergy>>>>;
 
 	std::string im_output_name= "./Results/im0ELECeDIMd__aft_xyz.psib0";
 
@@ -27,35 +29,35 @@ int main(int argc, char* argv[])
 	{
 		auto p1= SplitPropagator<MODE::IM, SplitType, im_wf_t>{};
 		p1.run<im_outputs_t>(
-				[&](const WHEN when, const ind step, const uind pass, auto& wf)
+			[&](const WHEN when, const ind step, const uind pass, auto& wf)
+			{
+				if(when == WHEN::AT_START)
 				{
-					if(when == WHEN::AT_START)
-					{
-						wf.addUsingCoordinateFunction(
-								[](auto... x) -> cxd
-								{
-									// std::size_t i = 0;
-									// double res = 0.0;
-									// ((res = x * 1.2, true) || ...); //select first
-									// ((i++ == 0 ? (res = x * 0.0, true) : false) || ...); //select i-th
-									// return cxd{ cos(res) * gaussian(0.0, 2.0, x...), sin(res) };
-									return cxd{gaussian(0.0, 2.0, x...), 0};
-								});
-						logUser("wf loaded manually!");
-						// 			// wf.save("ati0_");
-					}
-					// 		if (when == WHEN::DURING)
-					// 		{
-					// 			// if (step == 1)wf.save("ati1_");
-					// 			// if (step == 50)wf.save("ati50_");
-					// 			// if (step == 100)wf.save("ati100_");
-					// 			// if (step == 150)wf.save("ati150_");
-					// 			// if (step == 200)wf.save("ati200_");
-					// 			// if (step == 1000)wf.save("ati1000_");
-					// 			// if (step == 10000)wf.save("ati10000_");
-					// 		}
-					if(when == WHEN::AT_END) im_output_name= wf.save("./Results/im");
-				});
+					wf.addUsingCoordinateFunction(
+						[](auto... x) -> cxd
+						{
+							// std::size_t i = 0;
+							// double res = 0.0;
+							// ((res = x * 1.2, true) || ...); //select first
+							// ((i++ == 0 ? (res = x * 0.0, true) : false) || ...); //select i-th
+							// return cxd{ cos(res) * gaussian(0.0, 2.0, x...), sin(res) };
+							return cxd{gaussian(0.0, 2.0, x...), 0};
+						});
+					logUser("wf loaded manually!");
+					// 			// wf.save("ati0_");
+				}
+				// 		if (when == WHEN::DURING)
+				// 		{
+				// 			// if (step == 1)wf.save("ati1_");
+				// 			// if (step == 50)wf.save("ati50_");
+				// 			// if (step == 100)wf.save("ati100_");
+				// 			// if (step == 150)wf.save("ati150_");
+				// 			// if (step == 200)wf.save("ati200_");
+				// 			// if (step == 1000)wf.save("ati1000_");
+				// 			// if (step == 10000)wf.save("ati10000_");
+				// 		}
+				if(when == WHEN::AT_END) im_output_name= wf.save("./Results/im");
+			});
 	}
 	if(MODE_FILTER_OPT(MODE::RE))
 	{
@@ -65,71 +67,73 @@ int main(int argc, char* argv[])
 		using F1= Field<AXIS::XYZ, SinPulse>;
 		// using F2 = Field<AXIS::Y, GaussianEnvelope<SinPulse>>;
 		DipoleCoupling<VelocityGauge, F1> re_coupling{
-				SinPulse{{// .field = .2, .omega = 0.06,
-									.field						= .2 * sqrt(2. / 3.),
-									.omega						= 0.06,
-									.ncycles					= 1.0,
-									.FWHM_percent			= 0.9,
-									.phase_in_pi_units= 0,
-									.delay_in_cycles	= 0}}
-				// ,GaussianEnvelope<SinPulse>{ {
-				// .field = 0.1, .omega = 0.06,
-				// .ncycles = 4.0, .FWHM_percent = 0.5,
-				// .phase_in_pi_units = 0, .delay_in_cycles = 0
-				// }}
+			SinPulse{{// .field = .2, .omega = 0.06,
+								.field						= .2 * sqrt(2. / 3.),
+								.omega						= 0.06,
+								.ncycles					= 1.0,
+								.FWHM_percent			= 0.9,
+								.phase_in_pi_units= 0,
+								.delay_in_cycles	= 0}}
+			// ,GaussianEnvelope<SinPulse>{ {
+			// .field = 0.1, .omega = 0.06,
+			// .ncycles = 4.0, .FWHM_percent = 0.5,
+			// .phase_in_pi_units = 0, .delay_in_cycles = 0
+			// }}
 		};
 
-		auto re_outputs=
-				BufferedBinaryOutputs<VALUE<Step, Time>, VALUE<F1>
-															// , AVG<Identity>
-															// , AVG<PotentialEnergy>
-															// , PROJ<EIGENSTATES, Identity>
-															// , AVG<DERIVATIVE<0, PotentialEnergy>>
-															// , FLUX<BOX<3>>
-															// AUXILLARY_VALUES<ETAOperator>>; /* Estimated end of computation */
-															>{{.comp_interval= 1, .log_interval= 20}};
+		auto re_outputs= BufferedBinaryOutputs<
+			VALUE<Step, Time>,
+			VALUE<F1>
+			// , AVG<Identity>
+			// , AVG<PotentialEnergy>
+			// , PROJ<EIGENSTATES, Identity>
+			// , AVG<DERIVATIVE<0, PotentialEnergy>>
+			// , FLUX<BOX<3>>
+			// AUXILLARY_VALUES<ETAOperator>>; /* Estimated end of computation */
+			>{{.comp_interval= 1, .log_interval= 20}};
 
 		auto re_wf= Schrodinger::Spin0{re_capped_grid, re_potential, re_coupling};
 		auto p2		= SplitPropagator<MODE::RE, SplitType, decltype(re_wf)>{{.dt= 0.3}, std::move(re_wf)};
-		p2.run(re_outputs,
-					 [=](const WHEN when, const ind step, const uind pass, auto& wf)
-					 {
-						 if(when == WHEN::AT_START)
-						 {
-							 if(MPI::region == 0)
-								 //    wf.load(im_output_name);
-								 wf.addUsingCoordinateFunction(
-										 [](auto... x) -> cxd
-										 {
-											 //    std::size_t i = 2;
-											 //    double res = 0.0;
-											 //    ((res = x * 2.0, true) || ...);
-											 //    ((i++ == 0 ? (res = x * 2.0, true) : false) || ...);
-											 //    return sin(((x * 1.9) + ...));
-											 //    return gaussian(0, 2.0, x...) * cxd { cos(res), sin(res) };
-											 //    return gaussian(8.0, 4.5, x...) * cxd { cos(((x * 2.0) + ...)), sin(((x
-											 //    * 2.0) + ...)) };
-											 return gaussian(8.0, 4.0, x...) *
-															cxd{cos(((x * 2.0) + ...)), sin(((x * 2.0) + ...))};
-										 });
+		p2.run(
+			re_outputs,
+			[=](const WHEN when, const ind step, const uind pass, auto& wf)
+			{
+				if(when == WHEN::AT_START)
+				{
+					if(MPI::region == 0)
+						//    wf.load(im_output_name);
+						wf.addUsingCoordinateFunction(
+							[](auto... x) -> cxd
+							{
+								//    std::size_t i = 2;
+								//    double res = 0.0;
+								//    ((res = x * 2.0, true) || ...);
+								//    ((i++ == 0 ? (res = x * 2.0, true) : false) || ...);
+								//    return sin(((x * 1.9) + ...));
+								//    return gaussian(0, 2.0, x...) * cxd { cos(res), sin(res) };
+								//    return gaussian(8.0, 4.5, x...) * cxd { cos(((x * 2.0) + ...)), sin(((x
+								//    * 2.0) + ...)) };
+								return gaussian(8.0, 4.0, x...) *
+											 cxd{cos(((x * 2.0) + ...)), sin(((x * 2.0) + ...))};
+							});
 
-							 logUser("wf loaded manually!");
-							 wf.save("at0_");
-						 }
-						 if(when == WHEN::DURING)
-						 {
-							 if(step == 1) wf.save("at1_");
-							 //    if (step == 2)wf.save("at2_");
-							 if(step == 50) wf.save("at50_");
-							 if(step == 100) wf.save("at100_");
-							 if(step == 150) wf.save("at150_");
-							 if(step == 200) wf.save("at200_");
-							 if(step == 250) wf.save("at250_");
-							 if(step == 300) wf.save("at300_");
-							 //    if (step == 350)wf.save("at350_");
-						 }
-						 if(when == WHEN::AT_END) wf.save("final");
-					 });
+					logUser("wf loaded manually!");
+					wf.save("at0_");
+				}
+				if(when == WHEN::DURING)
+				{
+					if(step == 1) wf.save("at1_");
+					//    if (step == 2)wf.save("at2_");
+					if(step == 50) wf.save("at50_");
+					if(step == 100) wf.save("at100_");
+					if(step == 150) wf.save("at150_");
+					if(step == 200) wf.save("at200_");
+					if(step == 250) wf.save("at250_");
+					if(step == 300) wf.save("at300_");
+					//    if (step == 350)wf.save("at350_");
+				}
+				if(when == WHEN::AT_END) wf.save("final");
+			});
 	}
 	QSF::finalize();
 }

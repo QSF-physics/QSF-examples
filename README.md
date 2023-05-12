@@ -22,12 +22,20 @@ The examples include three-electron reduced-dimensionality models (`examples/nit
   > note: intel-provided fftw libraries might cause problems at the moment
 
 ### MacOS instructions
-```
+
+```bash
+	xcode-select --install
   brew install cmake
   brew install gcc
   brew install openmpi
   brew install fftw
 ``` 
+
+To adhere to the used formatting install also `clang-format`:
+
+```bash
+	brew install clang-format
+```
 
 ## Usage
 
@@ -64,4 +72,19 @@ There are three ways to provide configurations to a project:
 - ini file (called `project.ini`) located next to the source file
 - hardcoded in the `.cpp` file
 
+You can mix all three ways simultanously within a project, but objects usually require
+one or the other, in example the CAP (Complex Absorbing Potential) can be initialized either by passing the arguments to the object or by passing a `Section` of read ini file:
+
+```cpp
+	CAP(Base base, ind nCAP);
+	CAP(Section& settings): Base(settings);
+```
 Examples of each can be found in the `examples directory`.
+
+
+## Roadmap:
+
+1. Restructure the project so that the order of imports doesn't matter
+2. Improve type deduction in template function/classes
+3. Load configs using .env variables rather than ini files
+4. Swap the custom logging solution for spdlog

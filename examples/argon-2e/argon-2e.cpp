@@ -4,65 +4,100 @@
 #include "QSF.h"
 
 #ifndef MODEL
+/// @brief This defines the default compile-time model to use
+/// @note Custom model could be passed directly to a compiler
 #define MODEL ReducedModel::EckhardSacha
 #endif
 #ifndef GRIDTYPE
+/// @brief This defines the default compile-time grid time to use
+/// @note Custom grid type could be passed directly to a compiler
 #define GRIDTYPE MultiCartesianGrid<my_dim>
 #endif
 
+/// @brief Dimensionality of the project
 constexpr DIMS my_dim		 = 2_D;
+/// @brief Order of operator splitting
 constexpr auto splitOrder= 1;
+/// @brief Number of grid points to be used by Complex Absrobing Potential margin
 constexpr ind nCAP			 = 32;
+/// @brief Shorthand for describing type of base operator splitting
 using VTV								 = Split3Base<REP::X, REP::P, REP::X>;
+/// @brief Shorthand for describing type of operator splitting of fixed order
 using SplitType					 = MultiProductSplit<VTV, splitOrder>;
-// using TVT = Split3Base<REP::P, REP::X, REP::P>;
-// using SplitType = MultiProductSplit<TVT, splitOrder>;
+
+/// @brief Initializes program options
 cxxopts::Options options("argon-2e", "2e simulations of nitrogen");
-int
-main(const int argc, char* argv[])
+
+int main(const int argc, char* argv[])
 {
 	using namespace QSF;
-	// Get standard options and parse them
+
+#pragma region Config
+
 	getOptDefs(options);
 	ropts														= options.parse(argc, argv);
+	/// @brief Number of grid nodes in one dimension
 	const ind nodes									= opt<ind>("nodes");
+	/// @brief Spacing between grid nodes
 	const double dx									= opt<double>("dx");
+	/// @brief Time delta used in real-time evolution
 	const double re_dt							= dx * 0.25;	 // dx * dx * 0.5;//ropts["dt"].as<double>();
+	/// @brief Mangnitu
 	const double field							= opt<double>("field");
+	/// @brief Number of cycles at Full Width Half Maximum
 	const double FWHM_cycles				= opt<double>("fwhm");
+	/// @brief Total number of cycles. The multiplier 3.3 is empirical.
+	/// It gives nice smooth gaussian tail tending towards zero
 	const double ncycles						= round(FWHM_cycles * 3.3);
+	/// @brief Delay before the radiation is turned on
 	const double delay_in_cycles		= opt<double>("delay");
+	/// @brief Phase of the radiation
 	const double phase_in_pi_units	= opt<double>("phase");
+	/// @brief Delay after the radiation ends and the simulation end
 	const double postdelay_in_cycles= opt<double>("postdelay");
-	const double omega		= lambda_to_omega(opt<double>("lambda"));		// 0.0146978556546; //3100nm
-	const double gsrcut		= opt<double>("post-core-cut");
-	// The value 3.3 is empirical giving a nice smooth gaussian tail tending towards zero
-	const int log_interval= 1000;
-	// backup interval should be a multiple of log_interval
+	/// @brief Frequency of the radiation
+	const double omega							= lambda_to_omega(opt<double>("lambda"));
+	/// @brief
+	const double gsrcut							= opt<double>("post-core-cut");
+	/// @brief how often the program will log to the console
+	const int log_interval					= 1000;
+	/// @brief Backup interval
+	/// @note should be a multiple of log_interval
 	const ind ncycle_steps= log_interval * ind(round(2 * twopi / omega / re_dt) / log_interval);
 
-	// Set the output directory (different on cluster)
+	/// @brief Here we set the output directory
+	/// If a parameter option "remote" is true we'll use a custom place to store the data
+	/// This is useful for computational clusters like Prometheus which have designated
+	/// partitions (e.g. SCRATCH) for storage of temporary, large files
 	IO::path output_dir{opt<bool>("remote") ? std::getenv("SCRATCH") : IO::project_dir};
 	output_dir/= opt<bool>("remote") ? IO::project_name : IO::results_dir;
 	output_dir/= (MODEL == ReducedModel::Eberly ? "model_eb" : "model_es");
 	QSF::init(argc, argv, output_dir);
 
-	if(ropts.count("help"))		// Display help for options
+	/// @brief Defines how to display help for options
+	if(ropts.count("help"))
 	{
 		if(!MPI::pID) std::cout << options.help({"", "Environment", "Laser"}) << std::endl;
 		QSF::finalize();
 		exit(0);
 	}
-	// MODEL SETUP
+
+	// Setting up the interaction
 	InteractionBase config{.Ncharge= 2.0, .Echarge= e};
 	config.Nsoft= config.Esoft= (MODEL == ReducedModel::Eberly ? 2.163 : 2.2);
 	ReducedDimInteraction<MODEL> potential{config};
+
+#pragma endregion
+
+	// Imag-time part ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 	if constexpr
 		MODE_FILTER_OPT(MODE::IM)
 		{
 			QSF::subdirectory("groundstates");
+
 			CAP<CartesianGrid<my_dim>> im_grid{{dx, nodes}, nCAP};
 			auto im_wf		 = Schrodinger::Spin0{im_grid, potential};
+			///  BufferedBinarOutputs<...> is an alias of BufferedOutputs<true,...>
 			auto im_outputs= BufferedBinaryOutputs<
 				VALUE<Step, Time>,
 				OPERATION<Normalize>,
@@ -77,7 +112,7 @@ main(const int argc, char* argv[])
 
 			p1.run(
 				im_outputs,
-				[&](const WHEN when, const ind step, const uind pass, auto& wf)
+				[&](const WHEN when, const ind step, const uind pass, decltype(im_wf)& wf)
 				{
 					if(when == WHEN::AT_START)
 					{
@@ -85,18 +120,16 @@ main(const int argc, char* argv[])
 							[](auto... x) -> cxd {
 								return cxd{gaussian(0.0, 5.0, x...), 0};
 							});
-						logUser("wf loaded manually!");
+						logUser("Populated with initial gaussian");
 					}
 					if(when == WHEN::AT_END) wf.save(std::to_string(nodes) + "_" + std::to_string(dx));
 				});
 		}
 
-	// ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-	// Real-time part :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+	// Real-time part ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 	if constexpr
 		MODE_FILTER_OPT(MODE::RE)
 		{
-
 			QSF::subdirectory(
 				IO::path("flux_quiver_ratio_" + std::to_string(opt<double>("flux-quiver-ratio"))) /
 				IO::path("nm_" + std::to_string((int)opt<double>("lambda"))) /

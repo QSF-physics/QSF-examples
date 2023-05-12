@@ -1,10 +1,14 @@
 {
 	"search.exclude": {
 		"**/.git": true,
+		".git/**": true,
+		"**/*.svg": true,
 		"extern": true,
 		"build": true,
 		"theory": true,
-		"*.nb": true
+		"**/*.nb": true,
+		"**/*.wl": true,
+		".": true
 	},
 	"restructuredtext.confPath": "${workspaceFolder}/QSF/docs",
 	"esbonio.server.enabled": true,
@@ -28,4 +32,5 @@
 		"editor.insertSpaces": false,
 		"editor.tabSize": 2
 	},
+	
 }

@@ -18,8 +18,7 @@ using SplitType					 = MultiProductSplit<VTV, splitOrder>;
 // using TVT = Split3Base<REP::P, REP::X, REP::P>;
 // using SplitType = MultiProductSplit<TVT, splitOrder>;
 cxxopts::Options options("helium-2e", "2e simulations of nitrogen");
-int
-main(const int argc, char* argv[])
+int main(const int argc, char* argv[])
 {
 	using namespace QSF;
 	// Get standard options and parse them
@@ -30,13 +29,13 @@ main(const int argc, char* argv[])
 	const double re_dt							= dx * 0.25;	 // dx * dx * 0.5;//ropts["dt"].as<double>();
 	const double field							= opt<double>("field");
 	const double FWHM_cycles				= opt<double>("fwhm");
+	// The value 3.3 is empirical giving a nice smooth gaussian tail tending towards zero
 	const double ncycles						= round(FWHM_cycles * 3.3);
 	const double delay_in_cycles		= opt<double>("delay");
 	const double phase_in_pi_units	= opt<double>("phase");
 	const double postdelay_in_cycles= opt<double>("postdelay");
 	const double omega		= lambda_to_omega(opt<double>("lambda"));		// 0.0146978556546; //3100nm
 	const double gsrcut		= opt<double>("post-core-cut");
-	// The value 3.3 is empirical giving a nice smooth gaussian tail tending towards zero
 	const int log_interval= 1000;
 	// backup interval should be a multiple of log_interval
 	const ind ncycle_steps= log_interval * ind(round(10 * twopi / omega / re_dt) / log_interval);
